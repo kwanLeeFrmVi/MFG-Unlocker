@@ -16,3 +16,13 @@ Final release verification:
 - The delivered MFGLauncher.exe is the verified CI release binary. Compiler timestamps mean the earlier locally compiled binary had a different checksum.
 - The final native DLL downloader, with bounded retries, downloaded and verified official v1.7.0 again.
 - A later local rebuild of MFGLauncher.Tests.exe was denied by Windows (CS0016 access denied). The existing 141-pass local result and the clean final-source Windows CI pass are recorded; no system protection settings were changed.
+
+## v1.0.1
+
+- Removed card outlines and status-edge stripes; removed button, text input, and list input borders.
+- Applied Discord-inspired graphite surfaces, blurple actions, and rounded buttons. Native keyboard focus cues remain available.
+- Added a per-session single-instance guard. A second launch exited successfully while the original process and window remained.
+- Excluded DSX (1812620), Lossless Scaling (993090), and Steamworks Common Redistributables (228980), including matching custom roots. The live library now shows 8 games.
+- All 16 targeted discovery checks passed locally. The clean Windows release build passed all 143 checks: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42458956421
+- The delivered executable matches the published v1.0.1 SHA-256: f7ff62482702377989391b777ba910cbd5b7bc11a3a85ad9f2454ea0de128acd.
+
