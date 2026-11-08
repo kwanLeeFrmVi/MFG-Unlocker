@@ -1,0 +1,142 @@
+PASS Modern VDF parses multiple library drives
+PASS Legacy VDF parses paths and ignores metadata
+PASS VDF quotes and single-backslash Windows paths parse safely
+PASS Malformed VDF rejected
+PASS Manifest traversal rejected
+PASS Manifest filename ID mismatch rejected
+PASS Steam/custom duplicate roots deduplicate and retain Steam metadata
+PASS Missing Steam installs reported
+PASS Nested Unreal runtime preferred to launcher
+PASS Nested FG evidence found in bounded scan
+PASS Parent roots discover separate child games
+PASS Ambiguous executables remain unresolved
+PASS Missing added roots reported
+PASS Discovery cancellation honored
+PASS Known title and full FG evidence is reported compatible
+PASS Cyberpunk uses its documented proxies, never version/winmm
+PASS Occupied primary proxy selects documented available alternative
+PASS All proxy conflicts require review without overwriting
+PASS Compatibility evaluation preserves unrelated mod files
+PASS Owned proxy remains available for update
+PASS Owned install cannot bypass anti-cheat update blocking
+PASS Super Resolution alone is not compatibility evidence
+PASS Partial FG integration requires review
+PASS Unknown full FG integration remains an unverified candidate
+PASS Known report alone cannot establish local FG compatibility
+PASS Known anti-cheat title blocked without marker: Grand Theft Auto V Enhanced
+PASS Known anti-cheat title blocked without marker: Battlefield 6
+PASS Known anti-cheat title blocked without marker: Forza Horizon 6
+PASS Known anti-cheat title blocked without marker: Gears of War: E-Day
+PASS Known anti-cheat title blocked without marker: Zenless Zone Zero
+PASS Known anti-cheat title blocked without marker: AION 2
+PASS Known anti-cheat title blocked without marker: The First Descendant
+PASS Known anti-cheat title blocked without marker: Where Winds Meet
+PASS Known anti-cheat title blocked without marker: Wuthering Waves
+PASS Local anti-cheat evidence takes precedence: EasyAntiCheat/EasyAntiCheat_EOS_Setup.exe
+PASS Local anti-cheat evidence takes precedence: BattlEye/BEClient_x64.dll
+PASS Local anti-cheat evidence takes precedence: AntiCheatExpert/ACE-Base.sys
+PASS Local anti-cheat evidence takes precedence: start_protected_game.exe
+PASS Local anti-cheat evidence takes precedence: vgk.sys
+PASS OptiScaler-only report does not authorize normal proxy installation
+PASS Unrelated title substring cannot match upstream rule
+PASS Unresolved runtime executable prevents installation
+PASS Explicit valid executable selection resolves ambiguity
+PASS Incomplete scan prevents installation
+PASS Invalid or non-x64 runtime executable requires review
+PASS Runtime outside game folder cannot qualify
+PASS Flight Simulator Steam route uses version.dll
+PASS Manually added Flight Simulator folder cannot guess Store edition
+PASS Flight Simulator Store route uses dinput8.dll
+PASS Proxy allowlist excludes Bink routes and path traversal
+PASS ZIP import verifies digest and x64 DLL
+PASS Archive digest mismatch refused
+PASS Archive traversal refused
+PASS Backslash traversal refused
+PASS x86 DLL import refused
+PASS Executable renamed DLL refused
+PASS Duplicate ZIP entries refused
+PASS ZIP links refused
+PASS Official ZIP bound to per-asset digest
+PASS Release URL outside upstream refused
+PASS Occupied DLL never overwritten
+PASS Failed install rolls back exclusive DLL creation
+PASS Install writes valid ownership receipt
+PASS Ownership readable independently of runtime selection
+PASS Uninstall preserves modified DLL
+PASS Update failure rolls back DLL to matching receipt
+PASS Update replaces owned DLL and retains rollback data
+PASS Failed uninstall restores DLL
+PASS Uninstall preserves settings
+PASS Fresh anti-cheat marker blocks stale scan install
+PASS Package tampering refused
+PASS Repository accepts trimmed owner/name
+PASS Repository accepts safe name punctuation
+PASS Repository rejects injected or malformed value: https://github.com/a/b
+PASS Repository rejects injected or malformed value: owner/repo/extra
+PASS Repository rejects injected or malformed value: ../repo
+PASS Repository rejects injected or malformed value: owner/..
+PASS Repository rejects injected or malformed value: /owner/repo
+PASS Repository rejects injected or malformed value: owner/repo?x=1
+PASS Repository rejects injected or malformed value: owner/repo#tag
+PASS Repository rejects injected or malformed value: owner/repo%2fother
+PASS Repository rejects injected or malformed value: owner name/repo
+PASS Repository rejects injected or malformed value: owner\repo
+PASS Repository rejects injected or malformed value: 
+PASS Repository rejects injected or malformed value: 
+PASS Launcher-prefixed stable release compares newer
+PASS Conventional v-prefixed stable release compares newer
+PASS Build metadata cannot force same-version update
+PASS Assembly revision prevents same-tag downgrade
+PASS Older release does not update
+PASS Version rejects non-stable or malformed tag: v1.2.3-beta.1
+PASS Version rejects non-stable or malformed tag: v01.2.3
+PASS Version rejects non-stable or malformed tag: v1.2
+PASS Version rejects non-stable or malformed tag: v1.2.3.4
+PASS Version rejects non-stable or malformed tag: v2147483648.0.0
+PASS Version rejects non-stable or malformed tag: release-v1.2.3
+PASS Version rejects non-stable or malformed tag: launcher-v1.2.3/evil
+PASS Version rejects non-stable or malformed tag: 1.2.3+
+PASS Version rejects non-stable or malformed tag: 
+PASS Asset parser binds exact executable, release, and same-item digest
+PASS Published SHA-256 normalizes hexadecimal case
+PASS Digest from another asset item cannot authenticate executable
+PASS Conflicting same-item digests are rejected
+PASS Duplicate executable assets are ambiguous
+PASS Asset from another repository is rejected
+PASS Lookalike GitHub host is rejected
+PASS HTTP downgrade is rejected
+PASS ZIP or differently named launcher cannot replace executable
+PASS Checksum fallback does not reuse checksum asset's own digest for executable
+PASS SHA256SUMS binds hash to exact executable filename
+PASS BSD-style SHA256 checksum is supported
+PASS Per-file checksum asset supports a single bare digest
+PASS Aggregate checksum requires filename binding
+PASS Other-file checksum cannot authenticate launcher
+PASS Conflicting executable checksums are rejected
+PASS Download rejects unapproved source before network access
+PASS Download requires published checksum before network access
+PASS Matching x64 executable checksum validates without executing it
+PASS Downloaded executable with mismatched digest is rejected
+PASS An x64 DLL renamed exe cannot replace the launcher
+PASS Non-x64 executable is rejected
+PASS HTML download error cannot replace launcher
+PASS Oversized launcher is rejected
+PASS Self-update probe is built beside the test runner
+PASS Smoke update has distinct old and staged hashes
+PASS Self-update helper completes within ten seconds
+PASS Self-update helper exits successfully
+PASS Helper atomically replaces target with verified staged executable
+PASS Self-update preserves the previous executable as a rollback backup
+PASS Helper restarts the updated executable in its own directory
+PASS Steam launch uses validated numeric URI
+PASS Steam URI rejects command-like app IDs
+PASS Steam URI rejects trailing newline
+PASS Executable launch preserves special characters and sets working directory
+PASS Running executable blocks game DLL changes
+PASS Actual fixture process launches safely in its game directory
+PASS Outside-root executable launch refused
+PASS Missing executable launch refused
+PASS Unresolved executable asks for selection
+PASS Containment respects directory boundary
+PASS Settings persist roots and choices using atomic replacement
+RESULT 141 passed; 0 failed

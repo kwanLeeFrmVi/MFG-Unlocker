@@ -1,0 +1,35 @@
+name: Build MFG Launcher
+on:
+  push:
+    tags: ['launcher-v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Stable version (MAJOR.MINOR.PATCH)'
+        required: true
+        default: '1.0.0'
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test native launcher
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $version = if ($env:GITHUB_REF -like 'refs/tags/launcher-v*') { $env:GITHUB_REF_NAME -replace '^launcher-v','' } else { $env:INPUT_VERSION }
+          ./launcher/build.ps1 -Test -Version $version
+          Copy-Item ./launcher/build/MFGLauncher.exe ./MFGLauncher.exe
+          $hash = (Get-FileHash ./MFGLauncher.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  MFGLauncher.exe" | Set-Content ./SHA256SUMS.txt -Encoding ascii
+          "LAUNCHER_VERSION=$version" | Add-Content $env:GITHUB_ENV
+      - name: Publish launcher release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "launcher-v$env:LAUNCHER_VERSION"
+          gh release create $tag ./MFGLauncher.exe ./SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --title "MFG Launcher v$env:LAUNCHER_VERSION" --notes "Native Windows launcher. Automatically checks this fork for launcher updates and dashdogy/MFG-Unlocker for official DLL releases. See launcher/README.md."
