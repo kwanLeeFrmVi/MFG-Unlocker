@@ -43,3 +43,5 @@ Final release verification:
 - Added the requested D:\Games parent through the actual launcher. It persisted as a parent root and discovered three game subfolders; Manage folders provides removal without deleting games.
 - Installed official MFG Unlocker v1.7.0 into the Witcher 3 DX12 runtime and verified its hash and ownership receipt. Runtime testing is documented in the separate local test report.
 - Delivered executable SHA-256: 5ba7e7de010894e12681cb80c8059991f05dc455c43da3be0479696ec57904bd.
+
+- Subsequent real Witcher 3 DX12 / RTX 3080 Ti smoke test succeeded at 2x: game and applied DLSS FG enabled, local route ready, 2,364 submitted batches with zero failed batches/provider failures, sampled ~29.6 rendered / ~59.2 output FPS. Backed up graphics settings and corrected conflicting FSR FG/AMD Anti-Lag settings; the test scene loaded successfully. The game exited through its normal Quit dialog. This is a stationary smoke test, not a sustained benchmark or a test of higher multipliers.
