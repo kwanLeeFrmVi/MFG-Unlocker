@@ -11,21 +11,79 @@ namespace MfgLauncher
 {
     public sealed class ThemedButton : Button
     {
-        protected override void OnPaint(PaintEventArgs e) { if (Enabled) { base.OnPaint(e); return; } e.Graphics.Clear(Theme.Surface); using (var pen = new Pen(Theme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1); TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, Theme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine); }
+        bool hovered, pressed;
+        public ThemedButton() { SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true); }
+        protected override void OnMouseEnter(EventArgs e) { hovered = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hovered = pressed = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { pressed = e.Button == MouseButtons.Left; Invalidate(); base.OnMouseDown(e); }
+        protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
+        protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
+        protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
+        static System.Drawing.Drawing2D.GraphicsPath Shape(int width, int height, float diameter)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(0, 0, diameter, diameter, 180, 90); path.AddArc(width - diameter, 0, diameter, diameter, 270, 90);
+            path.AddArc(width - diameter, height - diameter, diameter, diameter, 0, 90); path.AddArc(0, height - diameter, diameter, diameter, 90, 90); path.CloseFigure(); return path;
+        }
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e); if (Width < 2 || Height < 2) return;
+            using (var path = Shape(Width, Height, Math.Min(12, Math.Min(Width, Height)))) { var old = Region; Region = new Region(path); if (old != null) old.Dispose(); }
+        }
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            Control parent = Parent; while (parent != null && parent.BackColor.A == 0) parent = parent.Parent;
+            e.Graphics.Clear(parent == null ? Theme.Background : parent.BackColor);
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Color fill = !Enabled ? Theme.Raised : pressed ? FlatAppearance.MouseDownBackColor : hovered ? FlatAppearance.MouseOverBackColor : BackColor;
+            float diameter = Math.Min(12f * e.Graphics.DpiX / 96f, Math.Min(Width - 1, Height - 1));
+            using (var path = Shape(Width, Height, diameter)) {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+            }
+            TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, Enabled ? ForeColor : Theme.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+            if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -5, -5), Theme.Text, fill);
+        }
+    }
+    public sealed class BorderlessComboBox : ComboBox
+    {
+        public BorderlessComboBox() { DrawMode = DrawMode.OwnerDrawFixed; }
+        protected override void OnDrawItem(DrawItemEventArgs e)
+        {
+            if (e.Bounds.Width <= 0 || e.Bounds.Height <= 0) return;
+            bool selected = (e.State & DrawItemState.Selected) != 0 && DroppedDown;
+            using (var brush = new SolidBrush(selected ? Theme.Raised : BackColor)) e.Graphics.FillRectangle(brush, e.Bounds);
+            string text = e.Index >= 0 && e.Index < Items.Count ? GetItemText(Items[e.Index]) : Text;
+            TextRenderer.DrawText(e.Graphics, text, Font, new Rectangle(e.Bounds.X + 4, e.Bounds.Y, Math.Max(0, e.Bounds.Width - 4), e.Bounds.Height), ForeColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
+            if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
+        }
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (m.Msg != 0x000f || Width < 26 || Height < 10) return;
+            using (var graphics = Graphics.FromHwnd(Handle)) {
+                using (var pen = new Pen(BackColor, 2)) graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+                using (var brush = new SolidBrush(BackColor)) graphics.FillRectangle(brush, Width - 23, 0, 23, Height);
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var pen = new Pen(Theme.Muted, 1.5f)) graphics.DrawLines(pen, new[] { new Point(Width - 16, Height / 2 - 2), new Point(Width - 12, Height / 2 + 2), new Point(Width - 8, Height / 2 - 2) });
+            }
+        }
     }
     public static class Theme
     {
-        public static readonly Color Background = ColorTranslator.FromHtml("#101925"), Surface = ColorTranslator.FromHtml("#182536"), Raised = ColorTranslator.FromHtml("#213248"), Border = ColorTranslator.FromHtml("#425870"), Text = ColorTranslator.FromHtml("#f1f5f9"), Muted = ColorTranslator.FromHtml("#afbed0"), Accent = ColorTranslator.FromHtml("#f4a261"), Good = ColorTranslator.FromHtml("#93dbc0"), Warning = ColorTranslator.FromHtml("#f3ca83"), Bad = ColorTranslator.FromHtml("#f4a5ad");
+        public static readonly Color Background = ColorTranslator.FromHtml("#313338"), Surface = ColorTranslator.FromHtml("#2b2d31"), Raised = ColorTranslator.FromHtml("#383a40"), Border = ColorTranslator.FromHtml("#4e5058"), Text = ColorTranslator.FromHtml("#f2f3f5"), Muted = ColorTranslator.FromHtml("#b5bac1"), Accent = ColorTranslator.FromHtml("#5865f2"), Good = ColorTranslator.FromHtml("#7dd8a8"), Warning = ColorTranslator.FromHtml("#f0b96c"), Bad = ColorTranslator.FromHtml("#f38ba8");
         public static Font Font(float size, bool bold = false) { return new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular); }
         public static Label Label(string text, float size, Color color, bool bold = false) { return new Label { Text = text, ForeColor = color, Font = Font(size, bold), AutoSize = false, BackColor = Color.Transparent }; }
         public static Button Button(string text, bool primary = false)
         {
-            var b = new ThemedButton { Text = text, Height = 38, Width = 108, FlatStyle = FlatStyle.Flat, BackColor = primary ? Accent : Raised, ForeColor = primary ? Background : Text, Font = Font(10, true), Cursor = Cursors.Hand, UseVisualStyleBackColor = false, AccessibleName = text, Margin = new Padding(0, 0, 8, 8) };
-            b.FlatAppearance.BorderColor = primary ? Accent : Border; b.FlatAppearance.BorderSize = 1; b.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(255, 187, 130) : Color.FromArgb(47, 68, 92); b.FlatAppearance.MouseDownBackColor = Border; return b;
+            var b = new ThemedButton { Text = text, Height = 38, Width = 108, FlatStyle = FlatStyle.Flat, BackColor = primary ? Accent : Raised, ForeColor = Text, Font = Font(10, true), Cursor = Cursors.Hand, UseVisualStyleBackColor = false, AccessibleName = text, Margin = new Padding(0, 0, 8, 8) };
+            b.FlatAppearance.BorderColor = primary ? Accent : Border; b.FlatAppearance.BorderSize = 0; b.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(71, 82, 196) : Color.FromArgb(78, 80, 88); b.FlatAppearance.MouseDownBackColor = primary ? Color.FromArgb(60, 69, 165) : Color.FromArgb(53, 55, 61); return b;
         }
         public static void Form(Form form) { form.BackColor = Background; form.ForeColor = Text; form.Font = Font(10); form.StartPosition = FormStartPosition.CenterParent; form.AutoScaleMode = AutoScaleMode.Dpi; form.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
-        public static TextBox TextBox() { return new TextBox { BackColor = Surface, ForeColor = Text, BorderStyle = BorderStyle.FixedSingle, Font = Font(11) }; }
-        public static ComboBox Combo() { return new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, BackColor = Raised, ForeColor = Text, FlatStyle = FlatStyle.Flat, Font = Font(10) }; }
+        public static TextBox TextBox() { return new TextBox { BackColor = ColorTranslator.FromHtml("#1e1f22"), ForeColor = Text, BorderStyle = BorderStyle.None, Font = Font(11) }; }
+        public static ComboBox Combo() { return new BorderlessComboBox { DropDownStyle = ComboBoxStyle.DropDownList, BackColor = ColorTranslator.FromHtml("#1e1f22"), ForeColor = Text, FlatStyle = FlatStyle.Flat, Font = Font(10) }; }
         public static Color StatusColor(GameStatus status) { return status == GameStatus.Installed || status == GameStatus.Reported ? Good : status == GameStatus.Blocked ? Bad : status == GameStatus.Unsupported ? Muted : Warning; }
         public static string StatusText(GameStatus s) { return s == GameStatus.Reported ? "Reported compatible" : s == GameStatus.Candidate ? "Candidate" : s == GameStatus.Review ? "Needs review" : s == GameStatus.Blocked ? "Blocked" : s == GameStatus.Installed ? "Installed" : "No FG evidence"; }
     }
@@ -197,7 +255,6 @@ namespace MfgLauncher
         public GameCard(Game game, Action launch, Action details, Action install)
         {
             DoubleBuffered = true; Height = 234; Width = 375; BackColor = Theme.Surface; Margin = new Padding(0, 0, 14, 16); Padding = new Padding(17); Cursor = Cursors.Hand; AccessibleName = "Launch " + game.Name;
-            Paint += delegate(object sender, PaintEventArgs e) { using (var pen = new Pen(Theme.Border)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1); using (var brush = new SolidBrush(Theme.StatusColor(game.Status))) e.Graphics.FillRectangle(brush, 0, 0, 4, Height); };
             var source = Theme.Label(game.Source ?? "Folder", 9, Theme.Muted); source.SetBounds(18, 13, Width - 36, 23); source.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             var title = Theme.Label(game.Name, 16, Theme.Text, true); title.SetBounds(17, 40, Width - 34, 33); title.AutoEllipsis = true; title.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             var status = Theme.Label(Theme.StatusText(game.Status) + (game.Installed == null ? "" : "  " + game.Installed.Version), 10, Theme.StatusColor(game.Status), true); status.SetBounds(18, 80, Width - 36, 24); status.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
@@ -211,6 +268,8 @@ namespace MfgLauncher
         }
     }
 }
+
+
 
 
 

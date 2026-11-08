@@ -59,6 +59,7 @@ namespace MfgLauncher
     {
         const int MaxFiles = 30000, MaxDepth = 12, MaxFolders = 6000;
         static readonly HashSet<string> IgnoredDirectories = new HashSet<string>(new[] { ".git", ".svn", "_CommonRedist", "shadercache", "DirectX", "DotNet", "vcredist", "__Installer" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> ExcludedSteamApps = new HashSet<string>(new[] { "1812620", "993090", "228980" }, StringComparer.Ordinal);
         public static List<string> ParseLibraryFolders(string text)
         {
             var parsed = Vdf.Parse(text); var folders = Vdf.Object(parsed, "libraryfolders") ?? parsed; var paths = new List<string>();
@@ -101,7 +102,7 @@ namespace MfgLauncher
         }
         public static ScanResult DiscoverAtLibraries(IEnumerable<string> libraries, IEnumerable<ScanRoot> roots, Action<string> progress, CancellationToken token)
         {
-            var result = new ScanResult(); var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var games = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
+            var excludedRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var result = new ScanResult(); var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var games = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
             var queue = new Queue<string>(libraries ?? Enumerable.Empty<string>());
             while (queue.Count > 0) {
                 token.ThrowIfCancellationRequested(); string raw = queue.Dequeue(), library;
@@ -115,6 +116,7 @@ namespace MfgLauncher
                         token.ThrowIfCancellationRequested();
                         try {
                             var game = ParseManifest(ReadSmall(manifest), library, manifest);
+                            if (ExcludedSteamApps.Contains(game.SteamId)) { excludedRoots.Add(game.Root); continue; }
                             if (!Directory.Exists(game.Root)) { result.Errors.Add(game.Name + ": install folder is missing (stale Steam manifest)."); continue; }
                             Util.NoReparse(game.Root); if (!games.ContainsKey(game.Root)) games.Add(game.Root, game);
                         } catch (OperationCanceledException) { throw; } catch (Exception ex) { result.Errors.Add(manifest + ": " + ex.Message); }
@@ -128,7 +130,7 @@ namespace MfgLauncher
                     IEnumerable<string> folders = root.IsParent ? Directory.EnumerateDirectories(path, "*", SearchOption.TopDirectoryOnly) : new[] { path }; int count = 0;
                     foreach (string folder in folders) {
                         token.ThrowIfCancellationRequested(); if (++count > 2000) { result.Errors.Add(path + ": stopped after 2,000 child folders; add smaller roots."); break; }
-                        try { Util.NoReparse(folder); string canonical = Util.Canonical(folder); if (!games.ContainsKey(canonical)) games.Add(canonical, new Game { Name = System.IO.Path.GetFileName(canonical), Root = canonical, Source = "Added folder" }); }
+                        try { Util.NoReparse(folder); string canonical = Util.Canonical(folder); if (!excludedRoots.Contains(canonical) && !games.ContainsKey(canonical)) games.Add(canonical, new Game { Name = System.IO.Path.GetFileName(canonical), Root = canonical, Source = "Added folder" }); }
                         catch (Exception ex) { result.Errors.Add(folder + ": " + ex.Message); }
                     }
                 } catch (OperationCanceledException) { throw; } catch (Exception ex) { result.Errors.Add((root.Path ?? "Added folder") + ": " + ex.Message); }
@@ -183,5 +185,6 @@ namespace MfgLauncher
         }
     }
 }
+
 
 

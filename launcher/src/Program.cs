@@ -13,10 +13,11 @@ namespace MfgLauncher
         [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
         [STAThread] static void Main(string[] args)
         {
-            if (SelfUpdater.ApplyIfRequested(args)) return; SetProcessDPIAware(); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+            if (SelfUpdater.ApplyIfRequested(args)) return; using (var instance = new SingleInstance()) { if (!instance.IsFirst) return; SetProcessDPIAware(); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
             Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs e) { MessageBox.Show(e.Exception.Message, "MFG Launcher", MessageBoxButtons.OK, MessageBoxIcon.Error); };
-            Application.Run(new MainForm());
+            Application.Run(new MainForm()); }
         }
     }
 }
+
 

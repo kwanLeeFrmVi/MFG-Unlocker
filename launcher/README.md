@@ -6,7 +6,7 @@ A native Windows desktop app for finding installed games, reviewing MFG Unlocker
 
 Double-click `MFGLauncher.exe`. Windows 10/11 x64 with .NET Framework 4.8 is required (included in current Windows installations). No Node.js, Electron, SDK, administrator mode, or installer is needed. The executable is unsigned.
 
-Steam discovery starts automatically. It reads Steam registry locations, conventional Steam folders on accessible fixed drives, `libraryfolders.vdf`, and installed-game manifests. Search and status filters narrow the results. Click a game card or **Launch** to start it; **Details** opens evidence and executable selection.
+The app keeps a single window; launching it again brings that window forward. Steam discovery starts automatically. It reads Steam registry locations, conventional Steam folders on accessible fixed drives, `libraryfolders.vdf`, and installed-game manifests. DSX, Lossless Scaling, and Steamworks Common Redistributables are excluded by their Steam app IDs. Search and status filters narrow the results. Click a game card or **Launch** to start it; **Details** opens evidence and executable selection.
 
 Use **Add folder** for a game from another store or an undiscovered library. Choose whether it contains one game or several game folders. **Manage folders** removes a scan root from the library without deleting any game files; **Rescan** refreshes discovery. **Scan report** explains inaccessible paths and incomplete scans.
 
@@ -72,4 +72,5 @@ Owned DLLs update only after receipt/hash validation and running-game checks. In
 The launcher downloads a newer release to staging, requires its published SHA-256, validates an x64 executable, waits for the current process to close, replaces it atomically, keeps a `.previous-*.bak` copy, and restarts. Failed replacement or launch attempts restore the previous file when possible. Keep the portable executable in a writable folder; the app never elevates itself.
 
 To publish a launcher update in your fork, push a `launcher-v1.0.1` tag or run the **Build MFG Launcher** workflow with version `1.0.1`. It stamps the executable's assembly version, runs the fixture tests, builds the portable app, and publishes `MFGLauncher.exe` and `SHA256SUMS.txt`. The version stamp prevents repeat-update loops. Upstream mod source/build files are kept separate in the fork; the launcher lives under `launcher/`.
+
 
