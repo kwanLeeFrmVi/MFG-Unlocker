@@ -32,7 +32,7 @@ namespace MfgLauncher
     }
     public sealed class RootsDialog : Form
     {
-        readonly ListBox list = new ListBox { BackColor = Theme.Surface, ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle, HorizontalScrollbar = true, DisplayMember = "Path" };
+        readonly ListBox list = new ListBox { BackColor = Theme.Surface, ForeColor = Theme.Text, BorderStyle = BorderStyle.None, HorizontalScrollbar = true, DisplayMember = "Path" };
         public List<ScanRoot> Roots { get; private set; }
         public RootsDialog(List<ScanRoot> roots)
         {
@@ -97,5 +97,6 @@ namespace MfgLauncher
         void Try(Action action) { try { action(); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "MFG Launcher", MessageBoxButtons.OK, MessageBoxIcon.Warning); } }
     }
 }
+
 
 
