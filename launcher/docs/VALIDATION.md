@@ -7,7 +7,7 @@
 - The official v1.7.0 ZIP downloaded and imported through the native package code with its published archive digest verified. DLL SHA-256: e6b6e6b70a6ed3af839c9647a32fc22660ae6b2d655062c5c072246c91fc10c7.
 - One live transport request failed before a later native retry succeeded. Bounded transport retries were added. TLS/certificate validation and download host restrictions remain enforced.
 
-Tests modified only generated fixture directories. No mod was installed into a real game and no real game was launched during validation. Runtime mod compatibility in a real game is therefore unverified. This build intentionally excludes Bink and OptiScaler plugin installation and standalone XeMFG routes.
+Initial v1.0.0 validation used only generated fixtures. Real-game installation and testing were subsequently performed as recorded below. The launcher excludes Bink and OptiScaler plugin installation and standalone XeMFG routes.
 
 Final release verification:
 
@@ -34,3 +34,12 @@ Final release verification:
 - Anti-cheat install/manual update requires a fresh unchecked risk acknowledgment. Missing FG, invalid executables, incomplete scans, unsupported OptiScaler routes, and proxy conflicts remain ineligible. Automatic updates do not reuse acknowledgments.
 - Compatibility guide downloads and renders the current upstream Markdown, including its three tables and issue links. HTML is escaped and executable content is not loaded.
 - Published executable SHA-256: 8860f181f4b2710dbe17b54fbf29f942ff89af18a271a86eb3f7f5185f84feec.
+
+## v1.0.3
+
+- Clean Windows release workflow passed all 181 checks: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42462353970
+- Fixed native guide header layout so Reload remains visible. Confirmed the live Markdown tables and links render inside the app, and Reload refreshes the displayed fetch timestamp.
+- Inspected the production anti-cheat acknowledgment dialog with an isolated fixture: Install stays disabled while unchecked and becomes enabled after acknowledgment. Canceled without installing the fixture.
+- Added the requested D:\Games parent through the actual launcher. It persisted as a parent root and discovered three game subfolders; Manage folders provides removal without deleting games.
+- Installed official MFG Unlocker v1.7.0 into the Witcher 3 DX12 runtime and verified its hash and ownership receipt. Runtime testing is documented in the separate local test report.
+- Delivered executable SHA-256: 5ba7e7de010894e12681cb80c8059991f05dc455c43da3be0479696ec57904bd.

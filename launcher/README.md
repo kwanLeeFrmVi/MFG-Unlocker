@@ -17,7 +17,7 @@ Use **Add folder** for a game from another store or an undiscovered library. Cho
 3. Select **Install** on an eligible game or in **Details**. Review the release, source, destination, and available proxy filenames. An unlisted candidate requires explicitly checking the review box. Anti-cheat installations and manual updates require a fresh risk acknowledgment; the launcher does not disable anti-cheat.
 4. Close the game before installing. Then launch it, enable Frame Generation in its settings, and press **Backspace** for the mod menu.
 
-For The Witcher 3, the launcher prioritizes `bin\x64_dx12\witcher3.exe`. Its DX11 and backup executables require review. If the in-game FG option is unavailable, open the mod menu, select **Game FG option: Unlock**, restart the game, then enable DLSS Frame Generation.
+For The Witcher 3, the launcher prioritizes `bin\x64_dx12\witcher3.exe`. Its DX11 and backup executables require review. If the in-game FG option is unavailable, open the mod menu, select **Game FG option: Unlock**, restart the game, then enable DLSS Frame Generation. Disable conflicting FSR Frame Generation, AMD Anti-Lag, and XeSS frame generation/low-latency settings first; the game can gray out DLSS FG while they are enabled.
 
 **Compatibility guide** renders the current upstream Markdown inside the launcher and provides **Reload** to fetch it again.
 
