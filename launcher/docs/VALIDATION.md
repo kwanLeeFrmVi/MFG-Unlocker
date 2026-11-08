@@ -8,3 +8,11 @@
 - One live transport request failed before a later native retry succeeded. Bounded transport retries were added. TLS/certificate validation and download host restrictions remain enforced.
 
 Tests modified only generated fixture directories. No mod was installed into a real game and no real game was launched during validation. Runtime mod compatibility in a real game is therefore unverified. This build intentionally excludes Bink and OptiScaler plugin installation and standalone XeMFG routes.
+
+Final release verification:
+
+- Clean Windows GitHub Actions build, all fixture tests, and publication succeeded: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42457070935
+- Published launcher-v1.0.0 was downloaded through LauncherUpdates.Check/Download, validated as x64, and matched GitHub's published SHA-256: 3e27114b60f7aaeee89c57edd4078701c89836b0f79c692fc90935b56bffb86b.
+- The delivered MFGLauncher.exe is the verified CI release binary. Compiler timestamps mean the earlier locally compiled binary had a different checksum.
+- The final native DLL downloader, with bounded retries, downloaded and verified official v1.7.0 again.
+- A later local rebuild of MFGLauncher.Tests.exe was denied by Windows (CS0016 access denied). The existing 141-pass local result and the clean final-source Windows CI pass are recorded; no system protection settings were changed.
