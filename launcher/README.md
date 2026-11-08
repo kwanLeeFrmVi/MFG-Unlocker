@@ -48,7 +48,7 @@ Launcher settings, package cache, and update rollback data are in `%LOCALAPPDATA
 Open PowerShell in the extracted source folder:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test -Version 1.0.2
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test -Version 1.0.3
 ```
 
 `build\MFGLauncher.exe` is the portable application. The script uses the C# compiler shipped with Windows .NET Framework and standard framework assemblies; it downloads no dependencies. Tests use temporary synthetic game directories and DLL fixtures, not real installed games. The launch test starts a copied test process with special characters in its path to verify argument safety and working-directory handling.
@@ -76,7 +76,7 @@ Owned DLLs update only after receipt/hash validation and running-game checks. In
 
 The launcher downloads a newer release to staging, requires its published SHA-256, validates an x64 executable, waits for the current process to close, replaces it atomically, keeps a `.previous-*.bak` copy, and restarts. Failed replacement or launch attempts restore the previous file when possible. Keep the portable executable in a writable folder; the app never elevates itself.
 
-To publish a launcher update in your fork, push a `launcher-v1.0.2` tag or run the **Build MFG Launcher** workflow with version `1.0.2`. It stamps the executable's assembly version, runs the fixture tests, builds the portable app, and publishes `MFGLauncher.exe` and `SHA256SUMS.txt`. The version stamp prevents repeat-update loops. Upstream mod source/build files are kept separate in the fork; the launcher lives under `launcher/`.
+To publish a launcher update in your fork, push a `launcher-v1.0.3` tag or run the **Build MFG Launcher** workflow with version `1.0.3`. It stamps the executable's assembly version, runs the fixture tests, builds the portable app, and publishes `MFGLauncher.exe` and `SHA256SUMS.txt`. The version stamp prevents repeat-update loops. Upstream mod source/build files are kept separate in the fork; the launcher lives under `launcher/`.
 
 
 

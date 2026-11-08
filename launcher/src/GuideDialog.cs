@@ -25,7 +25,8 @@ namespace MfgLauncher
             var header = new Panel { Dock = DockStyle.Top, Height = 98 };
             var title = Theme.Label("Compatibility guide", 22, Theme.Text, true); title.SetBounds(0, 0, 650, 42); header.Controls.Add(title);
             var source = Theme.Label("Live source: " + GuideMarkdown.SourceUrl, 9, Theme.Muted); source.SetBounds(1, 48, 850, 46); source.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; header.Controls.Add(source);
-            reload.SetBounds(918, 0, 100, 38); reload.Anchor = AnchorStyles.Top | AnchorStyles.Right; reload.Click += async delegate { await Reload(); }; header.Controls.Add(reload);
+            reload.SetBounds(0, 0, 100, 38); reload.Click += async delegate { await Reload(); }; header.Controls.Add(reload);
+            header.Resize += delegate { reload.Left = Math.Max(0, header.ClientSize.Width - reload.Width); title.Width = Math.Max(0, reload.Left - 16); source.Width = header.ClientSize.Width; };
             var footer = new Panel { Dock = DockStyle.Bottom, Height = 48 };
             close.Dock = DockStyle.Right; close.DialogResult = DialogResult.OK; CancelButton = close;
             status.Dock = DockStyle.Fill; status.TextAlign = ContentAlignment.MiddleLeft; status.AutoEllipsis = true; footer.Controls.Add(status); footer.Controls.Add(close);

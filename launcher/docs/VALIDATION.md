@@ -25,3 +25,12 @@ Final release verification:
 - Excluded DSX (1812620), Lossless Scaling (993090), and Steamworks Common Redistributables (228980), including matching custom roots. The live library now shows 8 games.
 - All 16 targeted discovery checks passed locally. The clean Windows release build passed all 143 checks: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42458956421
 - The delivered executable matches the published v1.0.1 SHA-256: f7ff62482702377989391b777ba910cbd5b7bc11a3a85ad9f2454ea0de128acd.
+
+## v1.0.2
+
+- Clean Windows release workflow passed all 181 checks: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42461756263
+- Locally ran 111 targeted discovery, compatibility, installer, and Markdown assertions, all passing.
+- Witcher discovery prefers bin/x64_dx12/witcher3.exe; DX11 and backup executable choices cannot borrow sibling Frame Generation evidence. Details supports Install and refreshes the library when runtime selection changes.
+- Anti-cheat install/manual update requires a fresh unchecked risk acknowledgment. Missing FG, invalid executables, incomplete scans, unsupported OptiScaler routes, and proxy conflicts remain ineligible. Automatic updates do not reuse acknowledgments.
+- Compatibility guide downloads and renders the current upstream Markdown, including its three tables and issue links. HTML is escaped and executable content is not loaded.
+- Published executable SHA-256: 8860f181f4b2710dbe17b54fbf29f942ff89af18a271a86eb3f7f5185f84feec.
