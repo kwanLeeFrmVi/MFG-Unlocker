@@ -25,4 +25,3 @@ Final release verification:
 - Excluded DSX (1812620), Lossless Scaling (993090), and Steamworks Common Redistributables (228980), including matching custom roots. The live library now shows 8 games.
 - All 16 targeted discovery checks passed locally. The clean Windows release build passed all 143 checks: https://github.com/kwanLeeFrmVi/MFG-Unlocker/actions/runs/42458956421
 - The delivered executable matches the published v1.0.1 SHA-256: f7ff62482702377989391b777ba910cbd5b7bc11a3a85ad9f2454ea0de128acd.
-

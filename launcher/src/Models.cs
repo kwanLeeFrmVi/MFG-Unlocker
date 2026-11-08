@@ -27,6 +27,8 @@ namespace MfgLauncher
         public List<string> Evidence { get; set; }
         public List<string> SuggestedProxies { get; set; }
         public bool ScanIncomplete { get; set; }
+        public bool HasAntiCheat { get; set; }
+        public bool CanOverrideAntiCheat { get; set; }
         public GameStatus Status { get; set; }
         public string BlockReason { get; set; }
         public string KnownRule { get; set; }
@@ -121,6 +123,7 @@ namespace MfgLauncher
         }
     }
 }
+
 
 
 

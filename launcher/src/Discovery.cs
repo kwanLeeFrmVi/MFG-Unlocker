@@ -180,11 +180,13 @@ namespace MfgLauncher
             string[] tools = { "unins", "uninstall", "crash", "report", "updater", "updatehelper", "launcher", "bootstrap", "setup", "install", "redist", "benchmark", "editor", "cefsubprocess", "webhelper", "helper", "easyanticheat", "battleye", "anticheat" };
             if (tools.Any(t => name.Contains(t))) return -1;
             if (relative.Contains(@"\engine\") || relative.StartsWith(@"engine\") || relative.Contains(@"\tools\") || relative.Contains(@"\support\")) return -1;
+            if (relative == @"bin\x64_dx12\witcher3.exe") return 220;
             int score = 10; if (relative.Contains(@"binaries\win64\")) score += 100; if (relative.Contains(@"bin\x64_dx12\")) score += 120; if (name.EndsWith("-win64-shipping")) score += 80;
             if (relative.Contains(@"bin\x64\")) score += 20; if (name.EndsWith("_dx12") || name.EndsWith("-dx12")) score += 40; if (relative.Contains(@"\win32\") || name.Contains("dx11")) score -= 5; return score;
         }
     }
 }
+
 
 
 

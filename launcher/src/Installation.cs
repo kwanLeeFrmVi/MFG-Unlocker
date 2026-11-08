@@ -115,9 +115,9 @@ namespace MfgLauncher
             if (package == null || String.IsNullOrEmpty(package.DllPath) || !File.Exists(package.DllPath)) throw new InvalidDataException("Download or import an MFG Unlocker package first."); Util.NoReparse(package.DllPath);
             if (new FileInfo(package.DllPath).Length > 100L * 1024 * 1024 || !Util.IsX64Pe(package.DllPath, true) || !Regex.IsMatch(package.Sha256 ?? "", @"\A[a-fA-F0-9]{64}\z") || !String.Equals(Util.HashFile(package.DllPath), package.Sha256, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("The cached package changed or is not a valid x64 DLL. Download or import it again."); if (String.IsNullOrEmpty(package.Version)) throw new InvalidDataException("The package has no release version.");
         }
-        static void RefreshEligibility(Game game, string ownedProxy)
+        static void RefreshEligibility(Game game, string ownedProxy, bool antiCheatAcknowledged = false)
         {
-            string selected = game.SelectedExe; Discovery.ScanGame(game, CancellationToken.None); game.SelectedExe = selected; if (ownedProxy == null) Compatibility.Evaluate(game); else Compatibility.EvaluateOwnedUpdate(game, ownedProxy);
+            string selected = game.SelectedExe; Discovery.ScanGame(game, CancellationToken.None); game.SelectedExe = selected; if (ownedProxy == null) Compatibility.EvaluateForInstall(game, antiCheatAcknowledged); else Compatibility.EvaluateOwnedUpdate(game, ownedProxy, antiCheatAcknowledged);
             if (game.Status != GameStatus.Reported && game.Status != GameStatus.Candidate) throw new InvalidOperationException(game.BlockReason ?? "This game needs a complete compatibility review before its DLL can be changed. Rescan and check Details."); ValidateGame(game);
         }
         public static void EnsureNotRunning(Game game)
@@ -148,11 +148,12 @@ namespace MfgLauncher
         {
             var mutex = new Mutex(false, "Local\\MFGLauncher-" + game.Id); bool acquired; try { acquired = mutex.WaitOne(0); } catch (AbandonedMutexException) { acquired = true; } if (!acquired) { mutex.Dispose(); throw new InvalidOperationException("Another launcher operation is already changing this game. Try again when it finishes."); } return mutex;
         }
-        public static void Install(Game game, PackageInfo package, string proxy)
+        public static void Install(Game game, PackageInfo package, string proxy) { Install(game, package, proxy, false); }
+        public static void Install(Game game, PackageInfo package, string proxy, bool antiCheatAcknowledged)
         {
             ValidateGame(game); ValidatePackage(package);
             using (var mutex = Lock(game)) { try {
-                RefreshEligibility(game, null); if (!Compatibility.IsSupportedProxy(proxy) || !game.SuggestedProxies.Contains(proxy, StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("Choose an available proxy filename recommended for this game.");
+                RefreshEligibility(game, null, antiCheatAcknowledged); if (!Compatibility.IsSupportedProxy(proxy) || !game.SuggestedProxies.Contains(proxy, StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("Choose an available proxy filename recommended for this game.");
                 string receiptPath = ReceiptPath(game); if (File.Exists(receiptPath) || Directory.Exists(receiptPath)) throw new IOException("An ownership receipt already exists. Review or uninstall the existing installation first.");
                 var receipt = MakeReceipt(game, package, proxy); Util.NoReparse(receipt.DllPath); if (File.Exists(receipt.DllPath) || Directory.Exists(receipt.DllPath)) throw new IOException("The proxy destination is occupied. Existing game DLLs and mods are never overwritten."); EnsureNotRunning(game);
                 bool dllCreated = false, receiptCreated = false; string partialHash = null, receiptHash = null; string receiptTemp = Path.Combine(game.Root, ".mfg-receipt-" + Guid.NewGuid().ToString("N") + ".tmp");
@@ -169,11 +170,12 @@ namespace MfgLauncher
                 finally { if (File.Exists(receiptTemp)) File.Delete(receiptTemp); }
             } finally { mutex.ReleaseMutex(); } }
         }
-        public static void Update(Game game, PackageInfo package)
+        public static void Update(Game game, PackageInfo package) { Update(game, package, false); }
+        public static void Update(Game game, PackageInfo package, bool antiCheatAcknowledged)
         {
             ValidateGame(game); ValidatePackage(package);
             using (var mutex = Lock(game)) { try {
-                var old = ReadReceipt(game); if (old == null) throw new InvalidOperationException("Only a verified owned installation can be updated."); if (!Same(game.SelectedExe, old.ExePath)) throw new InvalidOperationException("Select the executable belonging to this installation before updating it."); RefreshEligibility(game, old.ProxyName);
+                var old = ReadReceipt(game); if (old == null) throw new InvalidOperationException("Only a verified owned installation can be updated."); if (!Same(game.SelectedExe, old.ExePath)) throw new InvalidOperationException("Select the executable belonging to this installation before updating it."); RefreshEligibility(game, old.ProxyName, antiCheatAcknowledged);
                 if (!game.SuggestedProxies.Contains(old.ProxyName, StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("The installed proxy is no longer supported for this game. Review it before updating."); EnsureNotRunning(game); if (String.Equals(old.Sha256, package.Sha256, StringComparison.OrdinalIgnoreCase)) return;
                 string backup = Backup(game, old), receiptPath = ReceiptPath(game), originalReceiptHash = Util.HashFile(receiptPath); string stage = Path.Combine(Path.GetDirectoryName(old.DllPath), ".mfg-launcher-" + Guid.NewGuid().ToString("N") + ".tmp"), receiptStage = Path.Combine(game.Root, ".mfg-launcher-" + Guid.NewGuid().ToString("N") + ".tmp");
                 var next = MakeReceipt(game, package, old.ProxyName); byte[] nextJson = Json(next); string nextReceiptHash; using (var sha = SHA256.Create()) nextReceiptHash = BitConverter.ToString(sha.ComputeHash(nextJson)).Replace("-", "").ToLowerInvariant(); bool dllReplaced = false, receiptReplaced = false;
@@ -208,5 +210,6 @@ namespace MfgLauncher
         }
     }
 }
+
 
 

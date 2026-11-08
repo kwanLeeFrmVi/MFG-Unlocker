@@ -72,6 +72,11 @@ namespace MfgLauncher
             Add(result, new Rule("The Blood of Dawnwalker", "version.dll"), "The Blood of Dawnwalker", "Blood of Dawnwalker");
             Add(result, new Rule("The Last of Us Part II", "dinput8.dll"), "The Last of Us Part II", "The Last of Us Part II Remastered", "The Last of Us Part 2", "tlou-ii");
             Add(result, new Rule("The Witcher 3", "winmm.dll", "version.dll", "d3d11.dll"), "The Witcher 3", "The Witcher 3 Wild Hunt", "Witcher3");
+            Add(result, new Rule("AION 2", "d3d12.dll", "dxgi.dll"), "AION 2", "AION2");
+            Add(result, new Rule("Call of Duty: Modern Warfare 4", "dxgi.dll"), "Call of Duty Modern Warfare 4", "Call of Duty Modern Warfare IV");
+            Add(result, new Rule("The First Descendant", "dxgi.dll"), "The First Descendant", "First Descendant", "M1-Win64-Shipping");
+            Add(result, new Rule("Where Winds Meet", "winmm.dll"), "Where Winds Meet", "WhereWindsMeet");
+            Add(result, new Rule("Wuthering Waves", "version.dll", "dxgi.dll"), "Wuthering Waves", "WutheringWaves", "Client-Win64-Shipping-WutheringWaves");
             return result;
         }
         static void Add(Dictionary<string, Rule> rules, Rule rule, params string[] aliases) { foreach (string alias in aliases) rules[Normalize(alias)] = rule; }
@@ -100,23 +105,24 @@ namespace MfgLauncher
                 default: return "No FG evidence";
             }
         }
-        public static void Evaluate(Game game) { EvaluateCore(game, null); }
-        public static void EvaluateOwnedUpdate(Game game, string ownedProxy) { if (!IsSupportedProxy(ownedProxy)) throw new InvalidDataException("Unsupported owned proxy."); EvaluateCore(game, ownedProxy); if ((game.Status == GameStatus.Reported || game.Status == GameStatus.Candidate) && !game.SuggestedProxies.Contains(ownedProxy, StringComparer.OrdinalIgnoreCase)) { game.Status = GameStatus.Review; game.Evidence.Add("The owned proxy is no longer a supported route for this game. Review before updating."); } }
-        static void EvaluateCore(Game game, string ownedProxy)
+        public static void Evaluate(Game game) { EvaluateCore(game, null, false); }
+        public static void EvaluateForInstall(Game game, bool antiCheatAcknowledged) { EvaluateCore(game, null, antiCheatAcknowledged); }
+        public static void EvaluateOwnedUpdate(Game game, string ownedProxy, bool antiCheatAcknowledged = false)
+        {
+            if (!IsSupportedProxy(ownedProxy)) throw new InvalidDataException("Unsupported owned proxy."); EvaluateCore(game, ownedProxy, antiCheatAcknowledged);
+            if ((game.Status == GameStatus.Reported || game.Status == GameStatus.Candidate || game.CanOverrideAntiCheat) && !game.SuggestedProxies.Contains(ownedProxy, StringComparer.OrdinalIgnoreCase)) { game.CanOverrideAntiCheat = false; game.Status = game.HasAntiCheat && !antiCheatAcknowledged ? GameStatus.Blocked : GameStatus.Review; game.Evidence.Add("The owned proxy is no longer a supported route for this game. Review before updating."); }
+        }
+        static void EvaluateCore(Game game, string ownedProxy, bool antiCheatAcknowledged)
         {
             if (game == null) throw new ArgumentNullException("game");
-            game.Evidence = new List<string>(); game.SuggestedProxies = new List<string>(); game.KnownRule = null; game.BlockReason = null;
+            game.Evidence = new List<string>(); game.SuggestedProxies = new List<string>(); game.KnownRule = null; game.BlockReason = null; game.HasAntiCheat = false; game.CanOverrideAntiCheat = false;
             game.Status = GameStatus.Unsupported;
             var identities = Identity(game).Where(s => s.Length > 0).ToList();
             string blockedName = identities.FirstOrDefault(AntiCheat.Contains);
             string marker = (game.Files ?? new List<string>()).FirstOrDefault(IsAntiCheatFile);
-            if (blockedName != null || marker != null) {
-                game.Status = GameStatus.Blocked;
-                game.BlockReason = marker == null ? "This title is known to use anti-cheat." : "Anti-cheat component found: " + marker;
-                game.Evidence.Add(game.BlockReason);
-                game.Evidence.Add("MFG Unlocker does not support games with anti-cheat. Installation is disabled.");
-                return;
-            }
+            game.HasAntiCheat = blockedName != null || marker != null;
+            string antiCheatReason = game.HasAntiCheat ? (marker == null ? "This title is known to use anti-cheat." : "Anti-cheat component found: " + marker) : null;
+            if (game.HasAntiCheat) { game.Evidence.Add(antiCheatReason); game.Evidence.Add("MFG Unlocker is unsupported with anti-cheat. A manual installation requires explicit risk acknowledgment; the launcher does not disable or bypass anti-cheat."); }
             Rule rule = null;
             foreach (string identity in identities) { if (Rules.TryGetValue(identity, out rule)) break; }
             if (rule == null && identities.Any(OptiOnly.Contains)) {
@@ -156,6 +162,10 @@ namespace MfgLauncher
                         game.Status = GameStatus.Review; game.Evidence.Add("The selected executable must be an existing scanned x64 game executable inside this game folder.");
                     } else {
                         game.Evidence.Add("Runtime executable: " + actual.Substring(Util.Canonical(game.Root).Length + 1));
+                        if (rule != null && rule.Name == "The Witcher 3" && !String.Equals(actual, Path.Combine(Util.Canonical(game.Root), @"bin\x64_dx12\witcher3.exe"), StringComparison.OrdinalIgnoreCase) && !(Util.Canonical(game.Root).EndsWith(@"\bin\x64_dx12", StringComparison.OrdinalIgnoreCase) && String.Equals(Path.GetFileName(actual), "witcher3.exe", StringComparison.OrdinalIgnoreCase) && String.Equals(Path.GetDirectoryName(actual), Util.Canonical(game.Root), StringComparison.OrdinalIgnoreCase))) {
+                            game.Status = GameStatus.Review; game.SuggestedProxies.Clear();
+                            game.Evidence.Add("The Witcher 3 requires its DirectX 12 runtime. Select bin\\x64_dx12\\witcher3.exe in the main game folder; DirectX 11 and backup executables are not supported installation targets.");
+                        }
                         var available = game.SuggestedProxies.Where(p => String.Equals(p, ownedProxy, StringComparison.OrdinalIgnoreCase) || (!File.Exists(Path.Combine(Path.GetDirectoryName(actual), p)) && !Directory.Exists(Path.Combine(Path.GetDirectoryName(actual), p)))).ToList();
                         foreach (string occupied in game.SuggestedProxies.Except(available, StringComparer.OrdinalIgnoreCase)) game.Evidence.Add("Occupied proxy preserved: " + occupied);
                         game.SuggestedProxies = available;
@@ -166,6 +176,11 @@ namespace MfgLauncher
                 }
             }
             if (game.ScanIncomplete) { game.Status = GameStatus.Review; game.Evidence.Add("The scan was incomplete. Resolve scan errors and rescan before installing."); }
+            if (game.HasAntiCheat) {
+                game.CanOverrideAntiCheat = game.Status == GameStatus.Reported || game.Status == GameStatus.Candidate;
+                if (!antiCheatAcknowledged) { game.Status = GameStatus.Blocked; game.BlockReason = antiCheatReason + " Read the warning and acknowledge the risk for this action before installing."; }
+                else if (game.CanOverrideAntiCheat) { game.Status = GameStatus.Candidate; game.Evidence.Add("Anti-cheat risk acknowledged for this action only. This installation remains unsupported and unverified."); }
+            }
         }
         static bool IsStoreEdition(Game game)
         {
@@ -181,6 +196,7 @@ namespace MfgLauncher
         }
     }
 }
+
 
 
 

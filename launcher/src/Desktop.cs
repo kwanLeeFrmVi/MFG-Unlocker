@@ -118,7 +118,7 @@ namespace MfgLauncher
             downloadButton.SetBounds(22, 520, 190, 38); downloadButton.Click += async delegate { await CheckUpdates(true); }; sidebar.Controls.Add(downloadButton);
             importButton.SetBounds(22, 567, 190, 38); importButton.Click += async delegate { await LoadPackage(true); }; sidebar.Controls.Add(importButton);
             var updateSettings = Theme.Button("Update settings"); updateSettings.SetBounds(22, 614, 190, 38); updateSettings.Click += delegate { if (!busy) ConfigureUpdates(); }; sidebar.Controls.Add(updateSettings);
-            var docs = new LinkLabel { Text = "Compatibility guide", LinkColor = Theme.Muted, ActiveLinkColor = Theme.Accent, VisitedLinkColor = Theme.Muted, Font = Theme.Font(10), AutoSize = true, Left = 24, Top = 676, Anchor = AnchorStyles.Left | AnchorStyles.Top }; docs.LinkClicked += delegate { TryAction(LaunchService.OpenDocs); }; sidebar.Controls.Add(docs);
+            var docs = new LinkLabel { Text = "Compatibility guide", LinkColor = Theme.Muted, ActiveLinkColor = Theme.Accent, VisitedLinkColor = Theme.Muted, Font = Theme.Font(10), AutoSize = true, Left = 24, Top = 676, Anchor = AnchorStyles.Left | AnchorStyles.Top }; docs.LinkClicked += delegate { TryAction(() => { using (var guide = new GuideDialog()) guide.ShowDialog(this); }); }; sidebar.Controls.Add(docs);
             var footer = Theme.Label("Independent launcher\nWindows x64  /  v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + "", 9, Theme.Muted); footer.SetBounds(24, 742, 190, 50); footer.Anchor = AnchorStyles.Left | AnchorStyles.Top; sidebar.Controls.Add(footer);
             content.Dock = DockStyle.Fill; content.Padding = new Padding(28, 24, 24, 16); Controls.Add(content); content.BringToFront();
             var heading = new Panel { Dock = DockStyle.Top, Height = 87 };
@@ -198,13 +198,15 @@ namespace MfgLauncher
             int available = Math.Max(1, cards.ClientSize.Width - 24); int count = available >= 1100 ? 3 : available >= 740 ? 2 : 1; int width = (available - 14 * count) / count;
             foreach (Control card in cards.Controls) card.Width = Math.Max(320, width);
         }
-        void ShowDetails(Game game)
+        async void ShowDetails(Game game)
         {
+            bool requestedInstall;
             using (var dialog = new DetailsDialog(game, package)) {
-                dialog.ShowDialog(this);
+                dialog.EvidenceChanged += delegate { RenderGames(); };
+                dialog.ShowDialog(this); requestedInstall = dialog.RequestedInstall;
                 if (!String.IsNullOrEmpty(game.SelectedExe)) settings.ExeChoices[game.Root] = game.SelectedExe; else settings.ExeChoices.Remove(game.Root); TryAction(() => StateStore.Save(StateStore.SettingsPath, settings));
             }
-            GameEvaluation.Refresh(game); RenderGames();
+            GameEvaluation.Refresh(game); RenderGames(); if (requestedInstall) await ChangeInstall(game);
         }
         async Task LoadPackage(bool local)
         {
@@ -233,11 +235,11 @@ namespace MfgLauncher
             }
             if (package == null) { MessageBox.Show(this, "Use Get latest release or Import ZIP first.", "Release required"); return; }
             GameEvaluation.Refresh(game);
-            if (game.Status != GameStatus.Reported && game.Status != GameStatus.Candidate) { ShowDetails(game); return; }
+            if (game.Status != GameStatus.Reported && game.Status != GameStatus.Candidate && !game.CanOverrideAntiCheat) { ShowDetails(game); return; }
             using (var dialog = new InstallDialog(game, package)) {
-                if (dialog.ShowDialog(this) != DialogResult.OK) return; string proxy = dialog.Proxy;
+                if (dialog.ShowDialog(this) != DialogResult.OK) return; string proxy = dialog.Proxy; bool antiCheatAcknowledged = dialog.AntiCheatAcknowledged;
                 SetBusy(true); SetStatus("Installing into " + game.Name + "...");
-                try { await Task.Run(() => InstallService.Install(game, package, proxy)); GameEvaluation.Refresh(game); SetStatus("Installed in " + game.Name + ". Enable Frame Generation in-game; Backspace opens the menu."); }
+                try { await Task.Run(() => InstallService.Install(game, package, proxy, antiCheatAcknowledged)); GameEvaluation.Refresh(game); SetStatus("Installed in " + game.Name + ". Enable Frame Generation in-game; Backspace opens the menu."); }
                 catch (Exception ex) { ShowError(ex); GameEvaluation.Refresh(game); }
                 finally { SetBusy(false); RenderGames(); }
             }
@@ -257,17 +259,18 @@ namespace MfgLauncher
             DoubleBuffered = true; Height = 234; Width = 375; BackColor = Theme.Surface; Margin = new Padding(0, 0, 14, 16); Padding = new Padding(17); Cursor = Cursors.Hand; AccessibleName = "Launch " + game.Name;
             var source = Theme.Label(game.Source ?? "Folder", 9, Theme.Muted); source.SetBounds(18, 13, Width - 36, 23); source.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             var title = Theme.Label(game.Name, 16, Theme.Text, true); title.SetBounds(17, 40, Width - 34, 33); title.AutoEllipsis = true; title.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
-            var status = Theme.Label(Theme.StatusText(game.Status) + (game.Installed == null ? "" : "  " + game.Installed.Version), 10, Theme.StatusColor(game.Status), true); status.SetBounds(18, 80, Width - 36, 24); status.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+            var status = Theme.Label((game.HasAntiCheat ? "Anti-cheat warning" : Theme.StatusText(game.Status)) + (game.Installed == null ? "" : "  " + game.Installed.Version), 10, Theme.StatusColor(game.Status), true); status.SetBounds(18, 80, Width - 36, 24); status.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             var evidence = Theme.Label(game.Evidence.FirstOrDefault() ?? "Open Details to inspect this game.", 10, Theme.Muted); evidence.SetBounds(18, 111, Width - 36, 52); evidence.AutoEllipsis = true; evidence.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
             var buttons = new FlowLayoutPanel { Left = 18, Top = 177, Width = Width - 28, Height = 44, Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, WrapContents = false, BackColor = Color.Transparent };
             var launchButton = Theme.Button("Launch"); launchButton.Width = 87; launchButton.Enabled = !String.IsNullOrEmpty(game.SteamId) || !String.IsNullOrEmpty(game.SelectedExe); launchButton.Click += delegate { launch(); };
             var detailButton = Theme.Button("Details"); detailButton.Width = 82; detailButton.Click += delegate { details(); };
-            var installButton = Theme.Button(game.Installed != null ? "Uninstall" : "Install", game.Installed == null); installButton.Width = 94; installButton.Enabled = game.Installed != null || game.Status == GameStatus.Reported || game.Status == GameStatus.Candidate; installButton.Click += delegate { install(); };
+            var installButton = Theme.Button(game.Installed != null ? "Uninstall" : "Install", game.Installed == null); installButton.Width = 94; installButton.Enabled = game.Installed != null || game.Status == GameStatus.Reported || game.Status == GameStatus.Candidate || game.CanOverrideAntiCheat; installButton.Click += delegate { install(); };
             buttons.Controls.Add(launchButton); buttons.Controls.Add(detailButton); buttons.Controls.Add(installButton); Controls.Add(source); Controls.Add(title); Controls.Add(status); Controls.Add(evidence); Controls.Add(buttons);
             Click += delegate { launch(); }; foreach (var label in new[] { source, title, status, evidence }) label.Click += delegate { launch(); };
         }
     }
 }
+
 
 
 

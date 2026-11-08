@@ -37,14 +37,36 @@ namespace MfgLauncher
 
                 foreach (string blockedTitle in new[] { "Grand Theft Auto V Enhanced", "Battlefield 6", "Forza Horizon 6", "Gears of War: E-Day", "Zenless Zone Zero", "AION 2", "The First Descendant", "Where Winds Meet", "Wuthering Waves" }) {
                     Game blocked = Fixture(root, blockedTitle, "blocked-" + Guid.NewGuid().ToString("N")); Fg(blocked); Compatibility.Evaluate(blocked);
-                    assert(blocked.Status == GameStatus.Blocked && blocked.SuggestedProxies.Count == 0, "Known anti-cheat title blocked without marker: " + blockedTitle);
+                    assert(blocked.Status == GameStatus.Blocked && blocked.HasAntiCheat && blocked.CanOverrideAntiCheat, "Known anti-cheat title blocked without marker: " + blockedTitle);
                 }
                 foreach (string marker in new[] { "EasyAntiCheat/EasyAntiCheat_EOS_Setup.exe", "BattlEye/BEClient_x64.dll", "AntiCheatExpert/ACE-Base.sys", "start_protected_game.exe", "vgk.sys" }) {
                     Game blocked = Fixture(root, "Cyberpunk 2077", "marker-" + Guid.NewGuid().ToString("N")); Fg(blocked); blocked.Files.Add(marker); Compatibility.Evaluate(blocked);
                     assert(blocked.Status == GameStatus.Blocked, "Local anti-cheat evidence takes precedence: " + marker);
                 }
+                Game ac = Fixture(root, "The First Descendant", "ac-override"); Fg(ac); Compatibility.Evaluate(ac);
+                assert(ac.Status == GameStatus.Blocked && ac.CanOverrideAntiCheat && ac.SuggestedProxies.SequenceEqual(new[] { "dxgi.dll" }), "Anti-cheat override offers only the reported proxy route");
+                Compatibility.EvaluateForInstall(ac, false); assert(ac.Status == GameStatus.Blocked, "Unchecked anti-cheat acknowledgment stays blocked");
+                Compatibility.EvaluateForInstall(ac, true); assert(ac.Status == GameStatus.Candidate && ac.HasAntiCheat && ac.CanOverrideAntiCheat, "Explicit anti-cheat acknowledgment remains an unsupported candidate");
+                ac.ScanIncomplete = true; Compatibility.EvaluateForInstall(ac, true); assert(ac.Status == GameStatus.Review && !ac.CanOverrideAntiCheat, "Acknowledgment cannot waive incomplete scan");
+                ac.ScanIncomplete = false; string acExe = ac.SelectedExe; ac.SelectedExe = null; Compatibility.EvaluateForInstall(ac, true); assert(ac.Status == GameStatus.Review && !ac.CanOverrideAntiCheat, "Acknowledgment cannot waive executable selection");
+                ac.SelectedExe = acExe; File.WriteAllText(Path.Combine(ac.Root, "dxgi.dll"), "other mod"); Compatibility.EvaluateForInstall(ac, true); assert(ac.Status == GameStatus.Review && !ac.CanOverrideAntiCheat && File.ReadAllText(Path.Combine(ac.Root, "dxgi.dll")) == "other mod", "Acknowledgment cannot waive proxy conflicts");
+                Game acNoFg = Fixture(root, "AION 2", "ac-no-fg"); Compatibility.EvaluateForInstall(acNoFg, true); assert(acNoFg.Status == GameStatus.Review && !acNoFg.CanOverrideAntiCheat, "Acknowledgment cannot waive Frame Generation requirements");
+                Game acOpti = Fixture(root, "Red Dead Redemption 2", "ac-opti"); Fg(acOpti); acOpti.Files.Add("EasyAntiCheat/marker.dll"); Compatibility.EvaluateForInstall(acOpti, true); assert(acOpti.Status == GameStatus.Blocked && !acOpti.CanOverrideAntiCheat && acOpti.BlockReason.Contains("OptiScaler"), "Acknowledgment cannot enable unsupported OptiScaler installation");
                 Game opti = Fixture(root, "Red Dead Redemption 2", "opti"); Fg(opti); Compatibility.Evaluate(opti);
                 assert(opti.Status == GameStatus.Blocked && opti.BlockReason.Contains("OptiScaler"), "OptiScaler-only report does not authorize normal proxy installation");
+                Game witcher = Fixture(root, "The Witcher 3: Wild Hunt", "witcher-routes");
+                string dx12 = Path.Combine(witcher.Root, "bin", "x64_dx12", "witcher3.exe"); Directory.CreateDirectory(Path.GetDirectoryName(dx12)); File.Move(witcher.SelectedExe, dx12);
+                witcher.Executables.Clear(); witcher.Executables.Add(dx12); witcher.SelectedExe = dx12;
+                witcher.Files.Clear(); witcher.Files.AddRange(new[] { @"bin\x64_dx12\witcher3.exe", @"bin\x64_dx12\sl.dlss_g.dll", @"bin\x64_dx12\nvngx_dlssg.dll" });
+                Compatibility.Evaluate(witcher); assert(witcher.Status == GameStatus.Reported && witcher.SuggestedProxies.First() == "winmm.dll", "Witcher canonical DX12 runtime retains reported route");
+                string dx11 = Path.Combine(witcher.Root, "bin", "x64", "witcher3.exe"); Directory.CreateDirectory(Path.GetDirectoryName(dx11)); File.Copy(dx12, dx11); witcher.Executables.Add(dx11); witcher.SelectedExe = dx11;
+                Compatibility.Evaluate(witcher); assert(witcher.Status == GameStatus.Review && witcher.SuggestedProxies.Count == 0, "Witcher DX11 cannot borrow sibling DX12 FG evidence");
+                Compatibility.EvaluateOwnedUpdate(witcher, "winmm.dll"); assert(witcher.Status == GameStatus.Review && witcher.SuggestedProxies.Count == 0, "Owned proxy cannot authorize Witcher DX11 update");
+                string backupExe = Path.Combine(witcher.Root, "backup", "bin", "x64_dx12", "witcher3.exe"); Directory.CreateDirectory(Path.GetDirectoryName(backupExe)); File.Copy(dx12, backupExe); witcher.Executables.Add(backupExe); witcher.SelectedExe = backupExe;
+                Compatibility.Evaluate(witcher); assert(witcher.Status == GameStatus.Review && witcher.SuggestedProxies.Count == 0, "Witcher backup runtime requires review");
+                witcher.Files.Add(@"EasyAntiCheat\marker.dll"); Compatibility.EvaluateForInstall(witcher, true); assert(witcher.Status == GameStatus.Review && !witcher.CanOverrideAntiCheat, "Acknowledgment cannot waive Witcher runtime guard");
+                witcher.Files.Remove(@"EasyAntiCheat\marker.dll"); witcher.SelectedExe = dx12; Compatibility.Evaluate(witcher); assert(witcher.Status == GameStatus.Reported, "Selecting Witcher DX12 resolves review");
+                witcher.Root = Path.GetDirectoryName(dx12); Compatibility.Evaluate(witcher); assert(witcher.Status == GameStatus.Reported, "Explicit Witcher DX12 runtime folder remains supported");
                 Game substring = Fixture(root, "The Witcher 3 Soundtrack", "unrelated"); Fg(substring); Compatibility.Evaluate(substring);
                 assert(substring.Status == GameStatus.Candidate && substring.KnownRule == null, "Unrelated title substring cannot match upstream rule");
                 Game ambiguous = Fixture(root, "Hogwarts Legacy", "ambiguous"); Fg(ambiguous); ambiguous.SelectedExe = null; Compatibility.Evaluate(ambiguous);
@@ -79,5 +101,6 @@ namespace MfgLauncher
         static void Fg(Game game) { game.Files.Add("plugins/sl.dlss_g.dll"); game.Files.Add("nvngx_dlssg.dll"); }
     }
 }
+
 
 

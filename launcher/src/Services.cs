@@ -30,6 +30,7 @@ namespace MfgLauncher
             try {
                 var receipt = InstallService.ReadReceipt(game);
                 if (receipt != null) {
+                    if (game.HasAntiCheat) Compatibility.EvaluateOwnedUpdate(game, receipt.ProxyName);
                     game.Installed = receipt;
                     game.Evidence.Add("Owned installation: " + receipt.Version + " as " + receipt.ProxyName + ". SHA-256 matches.");
                     if (game.Status != GameStatus.Blocked) { if (String.IsNullOrEmpty(game.SelectedExe) || !String.Equals(Util.Canonical(game.SelectedExe), Util.Canonical(receipt.ExePath), StringComparison.OrdinalIgnoreCase)) { game.Status = GameStatus.Review; game.Evidence.Add("The owned mod belongs to a different executable. Select " + receipt.ExePath + " to launch that installation, or uninstall it before changing runtimes."); } else game.Status = GameStatus.Installed; }
@@ -38,4 +39,5 @@ namespace MfgLauncher
         }
     }
 }
+
 

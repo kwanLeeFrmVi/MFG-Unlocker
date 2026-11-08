@@ -18,7 +18,7 @@ namespace MfgLauncher
                 if (args.Length > 0 && args[0] == "--probe-running") { System.Threading.Thread.Sleep(30000); return 0; }
                 if (args.Length > 0 && args[0] == "--live-packages") { StateStore.DataDir = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "qa-fixtures", "live-package-state")); var pkg = PackageManager.Import(Path.GetFullPath(args[1]), "v1.7.0", "Official release test", "sha256:5bd19d03288e1ece1d0bb2030ac072b36758045028da192044dcaad73fd901dd"); Console.WriteLine("Official ZIP import: " + pkg.Version + " " + pkg.Sha256); var release = PackageManager.CheckLatest(); Console.WriteLine("Latest DLL release: " + release.Version + " " + release.AssetUrl); var app = LauncherUpdates.Check("kwanLeeFrmVi/MFG-Unlocker"); string staged = LauncherUpdates.Download(app); Console.WriteLine("Launcher release verified: " + app.Version + " " + Util.HashFile(staged)); return 0; }
                 if (args.Length > 0 && args[0] == "--ui-smoke") { UiFixture(); return 0; }
-                DiscoveryTests.Run(Assert); CompatibilityTests.Run(Assert); InstallationTests.Run(Assert); LauncherUpdateTests.Run(Assert); SelfUpdaterSmoke.Run(Assert); LaunchTests();
+                DiscoveryTests.Run(Assert); CompatibilityTests.Run(Assert); InstallationTests.Run(Assert); LauncherUpdateTests.Run(Assert); GuideTests.Run(Assert); SelfUpdaterSmoke.Run(Assert); LaunchTests();
             } catch (Exception ex) { failed++; Console.WriteLine("UNHANDLED " + ex); }
             Console.WriteLine("RESULT " + passed + " passed; " + failed + " failed"); return failed == 0 ? 0 : 1;
         }
@@ -59,6 +59,7 @@ namespace MfgLauncher
         }
     }
 }
+
 
 
 
